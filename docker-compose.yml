@@ -1,0 +1,27 @@
+services:
+  signal-server:
+    build:
+      context: ./apps/signal-server
+      dockerfile: Dockerfile
+    container_name: p2p-signal-server
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      P2P_SERVER_TOKEN: ${P2P_SERVER_TOKEN}
+
+    expose:
+      - "3000"
+
+    networks:
+      - npm-proxy
+      - p2p-internal
+
+networks:
+  npm-proxy:
+    external: true
+    name: nginx-proxy-manager_default
+
+  p2p-internal:
+    driver: bridge

@@ -1,0 +1,13 @@
+{
+  "name": "p2p-friends",
+  "private": true,
+  "scripts": {
+    "dev:desktop": "pnpm --filter desktop dev",
+    "dev:server": "pnpm --filter signal-server dev",
+    "build:desktop": "pnpm --filter desktop build",
+    "build:server": "pnpm --filter signal-server build"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
