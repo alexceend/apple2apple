@@ -1,0 +1,27 @@
+node_modules
+dist
+build
+out
+.vite
+
+.env
+.env.*
+!.env.example
+
+*.log
+
+data/
+storage/
+*.sqlite
+*.db
+
+# Electron
+release/
+.cache/
+
+# claves/identidades locales
+*.key
+*.pem
+identity.json
+friends.local.json
+transfers.local.json
