@@ -12,7 +12,7 @@ services:
       P2P_SERVER_TOKEN: ${P2P_SERVER_TOKEN}
 
     expose:
-      - "3000"
+      - "6767"
 
     networks:
       - npm-proxy
