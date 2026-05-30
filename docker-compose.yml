@@ -8,7 +8,7 @@ services:
 
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 6767
       P2P_SERVER_TOKEN: ${P2P_SERVER_TOKEN}
 
     expose:
