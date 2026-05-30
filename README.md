@@ -69,7 +69,7 @@ Cliente manda:
 }
 ```
 
-Server responde responde:
+Server responde:
 
 ```json
 {
