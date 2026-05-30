@@ -29,3 +29,10 @@ dist-renderer/
 electron-dist/
 *.asar
 release/
+
+# Electron build output
+apps/desktop/dist-electron/
+apps/desktop/dist-renderer/
+apps/desktop/electron-dist/
+apps/desktop/release/
+*.asar
