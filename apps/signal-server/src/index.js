@@ -7,7 +7,7 @@ const app = Fastify({
 
 await app.register(websocket);
 
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 6767);
 const TOKEN = process.env.P2P_SERVER_TOKEN || "";
 
 const peers = new Map();
