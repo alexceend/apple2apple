@@ -1,7 +1,44 @@
-import { app, BrowserWindow } from "electron";
+import { app, ipcMain, BrowserWindow } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import path from "node:path";
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import path, { dirname, join } from "node:path";
+const defaultSettings = {
+  serverUrl: "",
+  serverToken: ""
+};
+function getSettingsPath() {
+  return join(app.getPath("userData"), "settings.json");
+}
+function loadSettings() {
+  const settingsPath = getSettingsPath();
+  if (!existsSync(settingsPath)) {
+    return defaultSettings;
+  }
+  try {
+    const raw = readFileSync(settingsPath, "utf-8");
+    const parsed = JSON.parse(raw);
+    return {
+      serverUrl: typeof parsed.serverUrl === "string" ? parsed.serverUrl : "",
+      serverToken: typeof parsed.serverToken === "string" ? parsed.serverToken : ""
+    };
+  } catch {
+    return defaultSettings;
+  }
+}
+function saveSettings(settings) {
+  const settingsPath = getSettingsPath();
+  mkdirSync(dirname(settingsPath), {
+    recursive: true
+  });
+  writeFileSync(
+    settingsPath,
+    JSON.stringify(settings, null, 2),
+    "utf-8"
+  );
+  return settings;
+}
+app.disableHardwareAcceleration();
 createRequire(import.meta.url);
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
@@ -10,6 +47,12 @@ const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
+ipcMain.handle("settings:load", async () => {
+  return loadSettings();
+});
+ipcMain.handle("settings:save", async (_event, settings) => {
+  return saveSettings(settings);
+});
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),

@@ -8,6 +8,14 @@ out
 .env.*
 !.env.example
 
+# Config local de la app
+settings.json
+settings.local.json
+local.config.json
+
+# Electron local data
+userData/
+
 *.log
 
 data/

@@ -1,7 +1,10 @@
 import { app, BrowserWindow } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
+import { ipcMain } from "electron";
+import { loadSettings, saveSettings } from "./settings";
 import path from 'node:path'
+
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -25,6 +28,14 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
 let win: BrowserWindow | null
+
+ipcMain.handle("settings:load", async () => {
+  return loadSettings();
+});
+
+ipcMain.handle("settings:save", async (_event, settings) => {
+  return saveSettings(settings);
+});
 
 function createWindow() {
   win = new BrowserWindow({
