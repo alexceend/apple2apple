@@ -1,12 +1,11 @@
-import { app, BrowserWindow } from 'electron'
-import { createRequire } from 'node:module'
+import { app, BrowserWindow, ipcMain } from 'electron'
+//import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { ipcMain } from "electron";
 import { loadSettings, saveSettings } from "./settings";
 import path from 'node:path'
 
 
-const require = createRequire(import.meta.url)
+//const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // The built directory structure
