@@ -1,1 +1,0 @@
-"use strict";const e=require("electron");e.contextBridge.exposeInMainWorld("apple2apple",{loadSettings:()=>e.ipcRenderer.invoke("settings:load"),saveSettings:t=>e.ipcRenderer.invoke("settings:save",t)});
