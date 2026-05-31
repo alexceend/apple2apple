@@ -2,7 +2,18 @@ import Fastify from "fastify";
 import websocket from "@fastify/websocket";
 
 const app = Fastify({
-  logger: true
+  logger: {
+    serializers: {
+      req(request) {
+        return {
+          method: request.method,
+          url: request.url.split("?")[0],
+          host: request.hostname,
+          remoteAddress: request.ip
+        };
+      }
+    }
+  }
 });
 
 await app.register(websocket);
@@ -128,13 +139,6 @@ app.register(async function (fastify) {
             to: mask(msg.to)
           });
 
-          logSecurity("info", "relay_forwarded", {
-            ip: clientIp,
-            from: mask(msg.from),
-            to: mask(msg.to),
-            envelopeType: msg.envelope?.type || "unknown"
-          });
-
           socket.send(JSON.stringify({
             type: "relay.error",
             error: "peer_offline",
@@ -142,6 +146,13 @@ app.register(async function (fastify) {
           }));
           return;
         }
+
+        logSecurity("info", "relay_forwarded", {
+            ip: clientIp,
+            from: mask(msg.from),
+            to: mask(msg.to),
+            envelopeType: msg.envelope?.type || "unknown"
+        });
 
         target.send(JSON.stringify({
           type: "relay",
