@@ -25,12 +25,12 @@ function mask(value){
 }
 
 function getClientIp(request){
-  const forwardedFor = req.headers["x-forwarded-for"];
+  const forwardedFor = request.headers["x-forwarded-for"];
   if (typeof forwardedFor === "string") {
     return forwardedFor.split(",")[0].trim();
   }
 
-  return req.socket?.remoteAddress || "unknown";
+  return request.socket?.remoteAddress || "unknown";
 }
 
 function logSecurity(level, event, data = {}){
