@@ -11,6 +11,19 @@ App Electron A ───── signaling ───── NAS ───── sig
 App Electron A ─────────────── P2P / WebRTC ─────────────── App Electron B
 ```
 
+## Estado actual
+- Servidor de señalización WebSocket
+- Registro de peers con routeId
+- Relay entre peers
+- App Electron básica
+
+## Roadmap
+- WebRTC DataChannel
+- Transferencia por chunks
+- Cifrado E2E
+- Firmas digitales
+- Reanudación de transferencias
+
 ## Visión del sistema
 
 * Servidor de señalización WebSocket funcionando en un contenedor Docker de un servidor.
