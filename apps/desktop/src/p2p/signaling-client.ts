@@ -1,3 +1,5 @@
+import type { SignalEnvelope } from "./p2p-types";
+
 type SignalingStatus =
   | "idle"
   | "connecting"
@@ -65,7 +67,7 @@ export class SignalingClient {
     this.ws.send(JSON.stringify(message));
   }
 
-  relay(to: string, envelope: unknown) {
+  relay(to: string, envelope: SignalEnvelope) {
     this.send({
       type: "relay",
       from: this.options.routeId,

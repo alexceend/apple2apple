@@ -38,11 +38,16 @@ ipcMain.handle("settings:save", async (_event, settings) => {
 
 function createWindow() {
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    width: 1280,
+    height: 720,
+    autoHideMenuBar: true,
+    icon: path.join(process.env.VITE_PUBLIC, 'logo-big.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },
   })
+
+  win.maximize();
 
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
