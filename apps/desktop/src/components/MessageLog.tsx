@@ -9,8 +9,8 @@ export function MessageLog({ messages }: MessageLogProps) {
 
       <pre
         style={{
-          background: "#111",
-          color: "#0f0",
+          background: "var(--message-box-bg)",
+          color: "var(--message-box-text)",
           padding: 12,
           minHeight: 260,
           whiteSpace: "pre-wrap",

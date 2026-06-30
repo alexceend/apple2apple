@@ -28,13 +28,26 @@ export function SignalingSettingsPanel({
         }}
       >
         Servidor de señalización
+
+        <br/>
+        <br/>
+        <button onClick={saveConfig}>Guardar configuración</button>
+
+        <button onClick={connect} style={{ marginLeft: 8 }}>
+          Conectar WS
+        </button>
+
+        <button onClick={disconnect} style={{ marginLeft: 8 }}>
+          Desconectar
+        </button>
+
       </summary>
 
       <div
         style={{
           marginTop: 16,
           padding: 16,
-          border: "1px solid #ccc",
+          border: "1px solid var(--border)",
           borderRadius: 8,
           maxWidth: 620,
           marginLeft: "auto",
@@ -70,16 +83,6 @@ export function SignalingSettingsPanel({
 
         <br />
         <br />
-
-        <button onClick={saveConfig}>Guardar configuración</button>
-
-        <button onClick={connect} style={{ marginLeft: 8 }}>
-          Conectar WS
-        </button>
-
-        <button onClick={disconnect} style={{ marginLeft: 8 }}>
-          Desconectar
-        </button>
       </div>
     </details>
   );

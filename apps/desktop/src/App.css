@@ -1,42 +1,133 @@
+:root {
+  --bg: #ffffff;
+  --text: #111111;
+  --panel-bg: #f3f3f3;
+  --border: #cccccc;
+  --button-bg: #2d2d2d;
+  --button-text: #ffffff;
+  --input-bg: #ffffff;
+  --input-text: #111111;
+  --message-box-bg: #000000;
+  --message-box-text: #0f0;
+}
+
+.app-dark {
+  --bg: #121212;
+  --text: #ffffff;
+  --panel-bg: #1e1e1e;
+  --border: #444444;
+  --button-bg: #f0f0f0;
+  --button-text: #111;
+  --input-bg: #202020;
+  --input-text: #ffffff;
+  --message-box-bg: #ffffff;
+  --message-box-text: #000000;
+}
+
+.app-light {
+  --bg: #ffffff;
+  --text: #111111;
+  --panel-bg: #f3f3f3;
+  --border: #cccccc;
+  --button-bg: #2d2d2d;
+  --button-text: #ffffff;
+  --input-bg: #ffffff;
+  --input-text: #111111;
+  --message-box-bg: #000000;
+  --message-box-text: #0f0;
+}
+
+html,
+body,
 #root {
-  max-width: 1280px;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.app {
+  width: 100vw;
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-content {
+  width: 100%;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+section {
+  text-align: center;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.app h1 {
+  text-align: center;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.app-logo {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin: 16px auto;
 }
 
-.card {
-  padding: 2em;
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: var(--button-bg);
+  color: var(--button-text);
+  z-index: 1000;
 }
 
-.read-the-docs {
-  color: #888;
+button {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--border);
+
+  padding: 0.7rem 1.3rem;
+  border-radius: 8px;
+
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+
+  cursor: pointer;
+
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    transform .1s ease;
+}
+
+button:hover {
+  filter: brightness(1.15);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  background: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--border);
 }

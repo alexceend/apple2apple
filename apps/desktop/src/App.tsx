@@ -9,8 +9,13 @@ import { MessageLog } from "./components/MessageLog";
 import { useMessages } from "./hooks/useMessages";
 import { useSettings } from "./hooks/useSettings";
 import { useP2PConnection } from "./hooks/useP2PConnection";
+import { useState } from "react";
+
+import logo from "./assets/logo-big.ico"
+
 function App() {
   const { messages, addMessage } = useMessages();
+  const [darkMode, setDarkMode] = useState(true);
 
   const {
     serverUrl,
@@ -38,39 +43,70 @@ function App() {
   });
 
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui" }}>
-      <h1>Apple2Apple</h1>
+    <main className={darkMode ? "app app-dark" : "app app-light"}>
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        style={{
+          position: "fixed",
+          top: 20,
+          left: 20,
+          padding: "8px 12px",
+          borderRadius: 8,
+          border: "1px solid #666",
+          cursor: "pointer",
+          background: darkMode ? "#333" : "#eee",
+          color: darkMode ? "#fff" : "#000",
+          zIndex: 1000,
+        }}
+      >
+        {darkMode ? "☀️" : "🌙"}
+      </button>
 
-      <StatusPanel
-        settingsStatus={settingsStatus}
-        connectionStatus={connectionStatus}
-        routeId={routeId}
-        serverUrl={serverUrl}
-        hasToken={Boolean(serverToken)}
-      />
+      <div className="app-content">
+        <h1>Apple2Apple</h1>
+              <img
+            src={logo}
+            alt="Apple2Apple logo"
+            style={{
+              width: 150,
+              height: "auto",
+              display: "block",
+              margin: "16px auto",
+            }}
+        />
 
-      <SignalingSettingsPanel
-        serverUrl={serverUrl}
-        setServerUrl={setServerUrl}
-        serverToken={serverToken}
-        setServerToken={setServerToken}
-        saveConfig={saveConfig}
-        connect={connect}
-        disconnect={disconnect}
-      />
+        <StatusPanel
+          settingsStatus={settingsStatus}
+          connectionStatus={connectionStatus}
+          routeId={routeId}
+          serverUrl={serverUrl}
+          hasToken={Boolean(serverToken)}
+        />
 
-      <RelayTestPanel
-        targetRouteId={targetRouteId}
-        setTargetRouteId={setTargetRouteId}
-        sendTestRelay={sendTestRelay}
-      />
+        <SignalingSettingsPanel
+          serverUrl={serverUrl}
+          setServerUrl={setServerUrl}
+          serverToken={serverToken}
+          setServerToken={setServerToken}
+          saveConfig={saveConfig}
+          connect={connect}
+          disconnect={disconnect}
+        />
 
-      <WebRtcTestPanel
-        startWebRtc={startWebRtc}
-        sendP2PMessage={sendP2PMessage}
-      />
+        <RelayTestPanel
+          targetRouteId={targetRouteId}
+          setTargetRouteId={setTargetRouteId}
+          sendTestRelay={sendTestRelay}
+        />
 
-      <MessageLog messages={messages} />
+        <WebRtcTestPanel
+          startWebRtc={startWebRtc}
+          sendP2PMessage={sendP2PMessage}
+        />
+
+        <MessageLog messages={messages} />
+
+      </div>
     </main>
   );
 }
