@@ -2,7 +2,7 @@ import type { SignalEnvelope } from "./p2p-types";
 
 type SendSignal = (to: string, envelope: SignalEnvelope) => void;
 type OnLog = (message: unknown) => void;
-type OnDataMessage = (message: string) => void;
+type OnDataMessage = (message: string | ArrayBuffer) => void;
 
 type WebRtcClientOptions = {
     localRouteId: string;
@@ -130,12 +130,16 @@ export class WebRtcClient {
         await this.peer.addIceCandidate(candidate);
     }
     sendDataMessage(message: string) {
-        if (!this.channel) {
+        this.sendData(message);
+    }
+
+    sendData(data: string | ArrayBuffer){
+        if(!this.channel){
             this.onLog("No hay DataChannel creado");
             return;
         }
 
-        if (this.channel.readyState !== "open") {
+        if(this.channel.readyState != "open"){
             this.onLog({
                 type: "webrtc.datachannel.not_open",
                 state: this.channel.readyState
@@ -143,10 +147,12 @@ export class WebRtcClient {
             return;
         }
 
-        this.channel.send(message);
+        this.channel.send(data);
+
         this.onLog({
             type: "webrtc.datachannel.sent",
-            message
+            kind: typeof data === "string" ? "text" : "binary",
+            size: typeof data === "string" ? data.length : data.byteLength
         });
     }
 
@@ -157,6 +163,7 @@ export class WebRtcClient {
 
     private setupChannel(channel: RTCDataChannel) {
         this.channel = channel;
+        channel.binaryType = "arraybuffer";
 
         channel.onopen = () => {
             this.onLog({
@@ -178,12 +185,15 @@ export class WebRtcClient {
         };
 
         channel.onmessage = (event) => {
+            const data = event.data as string | ArrayBuffer;
+
             this.onLog({
                 type: "webrtc.datachannel.message",
-                message: event.data
+                kind: typeof data === "string" ? "text" : "binary",
+                size: typeof data === "string" ? data.length : data.byteLength
             });
 
-            this.onDataMessage(String(event.data));
+            this.onDataMessage(data);
         };
     }
 }
