@@ -55,7 +55,9 @@ function App() {
     sendFile,
     handleIncomingData,
     receivedFiles,
-    progress
+    progress,
+    pauseTransfer,
+    resumeTransfer
   } = useFileTransfer({
     sendData,
     addMessage
@@ -129,6 +131,8 @@ function App() {
 
         <FileTransferPanel
           sendFile={sendFile}
+          pauseTransfer={pauseTransfer}
+          resumeTransfer={resumeTransfer}
           receivedFiles={receivedFiles}
           progress={progress}
         />

@@ -58,6 +58,8 @@ export function useFileTransfer({
     sendFile,
     handleIncomingData,
     receivedFiles,
-    progress
+    progress,
+    pauseTransfer: () => fileTransfer.pause(),
+    resumeTransfer: () => fileTransfer.resume()
   };
 }

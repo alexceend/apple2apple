@@ -48,6 +48,9 @@ export class FileTransferClient {
 
   private lastProgressAt = 0;
 
+  private paused = false;
+  private pauseResolver: (() => void) | null = null;
+
 
   constructor(private readonly options: FileTransferClientOptions) {}
 
@@ -101,6 +104,9 @@ export class FileTransferClient {
     globalBlockIndex < lastBlock;
     globalBlockIndex++
   ) {
+
+      await this.waitIfPaused();
+
       const start = globalBlockIndex * blockSize;
       const end = Math.min(start + blockSize, file.size);
 
@@ -482,5 +488,28 @@ export class FileTransferClient {
     }
 
     return 4 * mib;
+  }
+
+  pause() {
+    this.paused = true;
+    this.options.onLog({ type: "file.transfer.paused" });
+  }
+
+  resume() {
+    this.paused = false;
+    this.options.onLog({ type: "file.transfer.resumed" });
+
+    this.pauseResolver?.();
+    this.pauseResolver = null;
+  }
+
+  private waitIfPaused() {
+    if (!this.paused) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve) => {
+      this.pauseResolver = resolve;
+    });
   }
 }
