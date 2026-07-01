@@ -32,3 +32,14 @@ export type FileTransferControlMessage =
   | FileDoneMessage
   | FileResumeStatusMessage
   | FileCancelMessage;
+
+
+export type TransferProgress = {
+  fileId: string;
+  fileName: string;
+  bytesTransferred: number;
+  totalBytes: number;
+  speedMBps: number;
+  percent: number;
+  direction: "send" | "receive";
+};

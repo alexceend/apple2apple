@@ -1,6 +1,7 @@
 import type {
   FileTransferControlMessage,
   FileMetaMessage,
+  TransferProgress
 } from "./file-transfer-types";
 
 import {
@@ -19,15 +20,8 @@ type ReceivedFileState = {
   blocks: ArrayBuffer[];
   nextGlobalBlockIndex: number;
   receivedBlocks: number;
+  startedAt: number;
   lastUpdatedAt: number;
-};
-
-type TransferProgress = {
-  fileId: string;
-  fileName: string;
-  sentOrReceivedChunks: number;
-  totalChunks: number;
-  direction: "send" | "receive";
 };
 
 
@@ -120,11 +114,26 @@ export class FileTransferClient {
 
       await this.options.sendData(packet);
 
+      const bytesTransferred = Math.min(
+        (globalBlockIndex + 1) * blockSize,
+        file.size
+      );
+
+      const elapsedSeconds = Math.max(
+        (Date.now() - startedAt) / 1000,
+        0.001
+      );
+
+      const speedMBps =
+        bytesTransferred / 1024 / 1024 / elapsedSeconds;
+
       this.emitProgress({
         fileId,
         fileName: file.name,
-        sentOrReceivedChunks: globalBlockIndex + 1,
-        totalChunks: totalBlocks,
+        bytesTransferred,
+        totalBytes: file.size,
+        speedMBps,
+        percent: (bytesTransferred / file.size) * 100,
         direction: "send"
       });
     }
@@ -232,12 +241,15 @@ export class FileTransferClient {
       return;
     }
 
+    const now = Date.now();
+
     this.receivingFiles.set(message.fileId, {
       meta: message,
       blocks: [],
       nextGlobalBlockIndex: 0,
       receivedBlocks: 0,
-      lastUpdatedAt: Date.now()
+      startedAt: now,
+      lastUpdatedAt: now
     });
 
     this.activeReceiveFileId = message.fileId;
@@ -310,11 +322,27 @@ export class FileTransferClient {
       state.nextGlobalBlockIndex++;
     }
 
+
+    const bytesTransferred = Math.min(
+      state.nextGlobalBlockIndex * state.meta.blockSize,
+      state.meta.fileSize
+    );
+
+    const elapsedSeconds = Math.max(
+      (Date.now() - state.startedAt) / 1000,
+      0.001
+    );
+
+    const speedMBps =
+      bytesTransferred / 1024 / 1024 / elapsedSeconds;
+
     this.emitProgress({
       fileId: state.meta.fileId,
       fileName: state.meta.fileName,
-      sentOrReceivedChunks: state.nextGlobalBlockIndex,
-      totalChunks: state.meta.totalBlocks,
+      bytesTransferred,
+      totalBytes: state.meta.fileSize,
+      speedMBps,
+      percent: (bytesTransferred / state.meta.fileSize) * 100,
       direction: "receive"
     });
   }
@@ -388,9 +416,9 @@ export class FileTransferClient {
 
   private emitProgress(progress: TransferProgress) {
     const now = Date.now();
-    const isLastChunk = progress.sentOrReceivedChunks === progress.totalChunks;
+    const isFinished = progress.bytesTransferred >= progress.totalBytes;
 
-    if (now - this.lastProgressAt < 100 && !isLastChunk) {
+    if (now - this.lastProgressAt < 100 && !isFinished) {
       return;
     }
 

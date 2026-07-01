@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { FileTransferClient } from "../p2p/file-transfer-client";
+import { TransferProgress } from "../p2p/file-transfer-types";
 
 type ReceivedFile = {
   fileId: string;
@@ -7,13 +8,6 @@ type ReceivedFile = {
   url: string;
 };
 
-type TransferProgress = {
-  fileId: string;
-  fileName: string;
-  sentOrReceivedChunks: number;
-  totalChunks: number;
-  direction: "send" | "receive";
-};
 
 type UseFileTransferOptions = {
   sendData: (data: string | ArrayBuffer) => Promise<void>;

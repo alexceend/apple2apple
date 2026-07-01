@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import type { TransferProgress } from "../p2p/file-transfer-types";
+
 type FileTransferPanelProps = {
   sendFile: (file: File | null) => void;
   receivedFiles: {
@@ -7,12 +9,7 @@ type FileTransferPanelProps = {
     fileName: string;
     url: string;
   }[];
-  progress: {
-    fileName: string;
-    sentOrReceivedChunks: number;
-    totalChunks: number;
-    direction: "send" | "receive";
-  } | null;
+  progress: TransferProgress | null;
 };
 
 export function FileTransferPanel({
@@ -43,8 +40,11 @@ export function FileTransferPanel({
       {progress && (
         <p>
           {progress.direction === "send" ? "Enviando" : "Recibiendo"}{" "}
-          {progress.fileName}: {progress.sentOrReceivedChunks}/
-          {progress.totalChunks} chunks
+          {progress.fileName}:{" "}
+          {(progress.bytesTransferred / 1024 / 1024).toFixed(1)} MB /{" "}
+          {(progress.totalBytes / 1024 / 1024).toFixed(1)} MB ·{" "}
+          {progress.percent.toFixed(1)}% ·{" "}
+          {progress.speedMBps.toFixed(2)} MB/s
         </p>
       )}
 

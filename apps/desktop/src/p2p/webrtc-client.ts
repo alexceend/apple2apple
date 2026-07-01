@@ -12,8 +12,8 @@ type WebRtcClientOptions = {
     onDataMessage: OnDataMessage;
 };
 
-const MAX_BUFFERED_AMOUNT = 8 * 1024 * 1024;
-const LOW_BUFFERED_AMOUNT = 2 * 1024 * 1024;
+const MAX_BUFFERED_AMOUNT = 32 * 1024 * 1024;
+const LOW_BUFFERED_AMOUNT = 8 * 1024 * 1024;
 
 export class WebRtcClient {
     private peer: RTCPeerConnection;
