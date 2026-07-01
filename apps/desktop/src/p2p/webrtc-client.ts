@@ -12,6 +12,9 @@ type WebRtcClientOptions = {
     onDataMessage: OnDataMessage;
 };
 
+const MAX_BUFFERED_AMOUNT = 8 * 1024 * 1024;
+const LOW_BUFFERED_AMOUNT = 2 * 1024 * 1024;
+
 export class WebRtcClient {
     private peer: RTCPeerConnection;
     private channel: RTCDataChannel | null = null;
@@ -129,11 +132,11 @@ export class WebRtcClient {
 
         await this.peer.addIceCandidate(candidate);
     }
-    sendDataMessage(message: string) {
+    async sendDataMessage(message: string) {
         this.sendData(message);
     }
 
-    sendData(data: string | ArrayBuffer){
+    async sendData(data: string | ArrayBuffer){
         if(!this.channel){
             this.onLog("No hay DataChannel creado");
             return;
@@ -147,7 +150,15 @@ export class WebRtcClient {
             return;
         }
 
-        this.channel.send(data);
+        if (typeof data === "string") {
+            this.channel.send(data);
+        } else {
+            this.channel.send(new Uint8Array(data));
+        }
+
+        if(this.channel.bufferedAmount > MAX_BUFFERED_AMOUNT){
+            await this.waitForBufferLow();
+        }
 
         this.onLog({
             type: "webrtc.datachannel.sent",
@@ -160,6 +171,34 @@ export class WebRtcClient {
         this.channel?.close();
         this.peer.close();
     }
+
+    private waitForBufferLow() {
+        return new Promise<void>((resolve, reject) => {
+            if (!this.channel) {
+                reject(new Error("No hay DataChannel"));
+                return;
+            }
+
+            if (this.channel.bufferedAmount <= LOW_BUFFERED_AMOUNT) {
+                resolve();
+                return;
+            }
+
+            const channel = this.channel;
+            channel.bufferedAmountLowThreshold = LOW_BUFFERED_AMOUNT;
+
+            const timeoutId = window.setTimeout(() => {
+            channel.onbufferedamountlow = null;
+            reject(new Error("Timeout esperando a que baje bufferedAmount"));
+            }, 30_000);
+
+            channel.onbufferedamountlow = () => {
+            window.clearTimeout(timeoutId);
+            channel.onbufferedamountlow = null;
+            resolve();
+            };
+        });
+        }
 
     private setupChannel(channel: RTCDataChannel) {
         this.channel = channel;

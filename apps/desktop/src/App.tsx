@@ -5,13 +5,15 @@ import { SignalingSettingsPanel } from "./components/SignalingSettingsPanel";
 import { RelayTestPanel } from "./components/RelayTestPanel";
 import { WebRtcTestPanel } from "./components/WebRtcTestPanel";
 import { MessageLog } from "./components/MessageLog";
+import { useFileTransfer } from "./hooks/useFileTransfer";
 
 import { useMessages } from "./hooks/useMessages";
 import { useSettings } from "./hooks/useSettings";
 import { useP2PConnection } from "./hooks/useP2PConnection";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import logo from "./assets/logo-big.ico"
+import { FileTransferPanel } from "./components/FileTransferPanel";
 
 function App() {
   const { messages, addMessage } = useMessages();
@@ -26,6 +28,9 @@ function App() {
     saveConfig
   } = useSettings({ addMessage });
 
+  const [incomingDataHandler, setIncomingDataHandler] =
+  useState<((data: string | ArrayBuffer) => void) | null>(null);
+
   const {
     routeId,
     connectionStatus,
@@ -35,12 +40,30 @@ function App() {
     disconnect,
     sendTestRelay,
     startWebRtc,
-    sendP2PMessage
+    sendP2PMessage,
+    sendData
   } = useP2PConnection({
     serverUrl,
     serverToken,
+    addMessage,
+    onDataChannelMessage: (data) => {
+      incomingDataHandler?.(data);
+    }
+  });
+
+  const {
+    sendFile,
+    handleIncomingData,
+    receivedFiles,
+    progress
+  } = useFileTransfer({
+    sendData,
     addMessage
   });
+
+  useEffect(() => {
+    setIncomingDataHandler(() => handleIncomingData);
+  }, [handleIncomingData]);
 
   return (
     <main className={darkMode ? "app app-dark" : "app app-light"}>
@@ -102,6 +125,12 @@ function App() {
         <WebRtcTestPanel
           startWebRtc={startWebRtc}
           sendP2PMessage={sendP2PMessage}
+        />
+
+        <FileTransferPanel
+          sendFile={sendFile}
+          receivedFiles={receivedFiles}
+          progress={progress}
         />
 
         <MessageLog messages={messages} />

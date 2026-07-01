@@ -8,12 +8,14 @@ type UseP2PConnectionOptions = {
   serverUrl: string;
   serverToken: string;
   addMessage: (message: unknown) => void;
+  onDataChannelMessage?: (data: string | ArrayBuffer) => void;
 };
 
 export function useP2PConnection({
   serverUrl,
   serverToken,
-  addMessage
+  addMessage,
+  onDataChannelMessage
 }: UseP2PConnectionOptions) {
   const [connectionStatus, setConnectionStatus] = useState("idle");
   const [targetRouteId, setTargetRouteId] = useState("raspi-test");
@@ -40,18 +42,15 @@ export function useP2PConnection({
           clientRef.current?.relay(to, envelope);
         },
         onLog: addMessage,
-        onDataMessage: (message) => {
-          addMessage({
-            type: "p2p.message.received",
-            message
-          });
+        onDataMessage: (data) => {
+          onDataChannelMessage?.(data);
         }
       });
 
       webRtcRef.current = webRtc;
       return webRtc;
     },
-    [routeId, addMessage]
+    [routeId, addMessage, onDataChannelMessage]
   );
 
   const handleWebRtcSignal = useCallback(
@@ -181,6 +180,10 @@ export function useP2PConnection({
     webRtcRef.current?.sendDataMessage("hola por WebRTC DataChannel");
   }, []);
 
+  const sendData = useCallback(async (data: string | ArrayBuffer) => {
+    await webRtcRef.current?.sendData(data);
+  }, []);
+
   return {
     routeId,
     connectionStatus,
@@ -190,6 +193,7 @@ export function useP2PConnection({
     disconnect,
     sendTestRelay,
     startWebRtc,
-    sendP2PMessage
+    sendP2PMessage,
+    sendData
   };
 }
