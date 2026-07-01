@@ -68,10 +68,10 @@ export class WebRtcClient {
         };
 
         this.peer.ondatachannel = (event) => {
-            this.onLog({
+            /*this.onLog({
                 type: "webrtc.datachannel.received",
                 label: event.channel.label
-            });
+            });*/
 
             this.setupChannel(event.channel);
         };
@@ -133,7 +133,7 @@ export class WebRtcClient {
         await this.peer.addIceCandidate(candidate);
     }
     async sendDataMessage(message: string) {
-        this.sendData(message);
+        await this.sendData(message);
     }
 
     async sendData(data: string | ArrayBuffer){
@@ -150,21 +150,25 @@ export class WebRtcClient {
             return;
         }
 
-        if (typeof data === "string") {
-            this.channel.send(data);
-        } else {
-            this.channel.send(new Uint8Array(data));
-        }
-
         if(this.channel.bufferedAmount > MAX_BUFFERED_AMOUNT){
             await this.waitForBufferLow();
         }
 
-        this.onLog({
+        if (typeof data === "string") {
+            this.channel.send(data);
+        } else {
+            this.channel.send(data);
+        }
+
+        if (this.channel.bufferedAmount > MAX_BUFFERED_AMOUNT) {
+            await this.waitForBufferLow();
+        }
+
+        /*this.onLog({
             type: "webrtc.datachannel.sent",
             kind: typeof data === "string" ? "text" : "binary",
             size: typeof data === "string" ? data.length : data.byteLength
-        });
+        });*/
     }
 
     close() {

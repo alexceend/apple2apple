@@ -3,15 +3,12 @@ export type FileMetaMessage = {
   fileId: string;
   fileName: string;
   fileSize: number;
-  chunkSize: number;
-  totalChunks: number;
-};
 
-export type FileChunkHeaderMessage = {
-  type: "file.chunk";
-  fileId: string;
-  index: number;
-  size: number;
+  pieceSize: number;
+  blockSize: number;
+
+  totalPieces: number;
+  totalBlocks: number;
 };
 
 export type FileDoneMessage = {
@@ -19,7 +16,19 @@ export type FileDoneMessage = {
   fileId: string;
 };
 
+export type FileResumeStatusMessage = {
+  type: "file.resume.status";
+  fileId: string;
+  nextGlobalBlockIndex: number;
+};
+
+export type FileCancelMessage = {
+  type: "file.cancel";
+  fileId: string;
+};
+
 export type FileTransferControlMessage =
   | FileMetaMessage
-  | FileChunkHeaderMessage
-  | FileDoneMessage;
+  | FileDoneMessage
+  | FileResumeStatusMessage
+  | FileCancelMessage;
