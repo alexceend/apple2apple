@@ -4,6 +4,7 @@ import { WebRtcClient } from "../p2p/webrtc-client";
 import { getOrCreateRouteId } from "../p2p/route-id";
 import type { RelayMessage, SignalEnvelope } from "../p2p/p2p-types";
 import type { LocalIdentity } from "../p2p/identity";
+import { updateFriendRouteId } from "../p2p/friends";
 
 type UseP2PConnectionOptions = {
   serverUrl: string;
@@ -134,6 +135,16 @@ export function useP2PConnection({
 
         if (!from || !envelope) {
           return;
+        }
+
+        if (
+          "senderIdentity" in envelope &&
+          envelope.senderIdentity
+        ) {
+          updateFriendRouteId(
+            envelope.senderIdentity.fingerprint,
+            from
+          );
         }
 
         if (

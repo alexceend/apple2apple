@@ -2,6 +2,7 @@ export type Friend = {
     nickname: string;
     publicKeyJwk: JsonWebKey;
     fingerprint: string;
+    lastRouteId?: string;
 };
 
 const FRIENDS_KEY = "apple2apple.friends";
@@ -42,4 +43,19 @@ export function isFriend(
     return getFriends().some(
         f => f.fingerprint == fingerprint
     );
+}
+
+export function updateFriendRouteId(
+  fingerprint: string,
+  routeId: string
+) {
+  const friends = getFriends();
+
+  const updated = friends.map((friend) =>
+    friend.fingerprint === fingerprint
+      ? { ...friend, lastRouteId: routeId }
+      : friend
+  );
+
+  localStorage.setItem(FRIENDS_KEY, JSON.stringify(updated));
 }
