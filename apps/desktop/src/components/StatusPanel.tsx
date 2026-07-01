@@ -1,4 +1,5 @@
 import { LocalIdentity } from "../p2p/identity";
+import { QRCodeCanvas } from "qrcode.react";
 
 type StatusPanelProps = {
   settingsStatus: string;
@@ -11,6 +12,9 @@ type StatusPanelProps = {
   nickname: string;
   onNicknameChange: (value: string) => void;
   onSaveNickname: () => void;
+
+  inviteLink: string;
+  onCopyInviteLink: () => void;
 };
 
 export function StatusPanel({
@@ -22,7 +26,9 @@ export function StatusPanel({
   identity,
   nickname,
   onNicknameChange,
-  onSaveNickname
+  onSaveNickname,
+  inviteLink,
+  onCopyInviteLink
 }: StatusPanelProps) {
   return (
     <section style={{ marginBottom: 24 }}>
@@ -53,6 +59,30 @@ export function StatusPanel({
           <strong>Fingerprint:</strong> {identity?.fingerprint}
         </p>
       </div>
+
+      <p>
+        <strong>Invitación:</strong>
+      </p>
+
+      <textarea
+        readOnly
+        value={inviteLink}
+        style={{ width: "100%", minHeight: 80, marginBottom: 15}}
+      />
+
+      {inviteLink && (
+        <QRCodeCanvas
+          value={inviteLink}
+          size={180}
+        />
+      )}
+
+      <br/>
+      <br/>
+
+      <button onClick={onCopyInviteLink}>
+        Copiar invitación
+      </button>
 
 
       <div

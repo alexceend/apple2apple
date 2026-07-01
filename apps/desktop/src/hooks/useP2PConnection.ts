@@ -38,9 +38,14 @@ export function useP2PConnection({
         throw new Error("No hay cliente WebSocket activo");
       }
 
+      if(!identity){
+        throw new Error("La identidad local todavía no está cargada");
+      }
+
       const webRtc = new WebRtcClient({
         localRouteId: routeId,
         remoteRouteId,
+        identity,
         sendSignal: (to, envelope) => {
           clientRef.current?.relay(to, envelope);
         },
@@ -62,7 +67,7 @@ export function useP2PConnection({
         const webRtc = getOrCreateWebRtcClient(from);
 
         if (envelope.type === "webrtc.offer") {
-          await webRtc.handleOffer(envelope.sdp);
+          await webRtc.handleOffer(envelope.sdp, envelope.senderIdentity);
           return;
         }
 

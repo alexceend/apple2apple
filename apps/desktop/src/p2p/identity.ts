@@ -75,3 +75,27 @@ export async function updateNickname(
 
   return identity;
 }
+
+
+export function createInviteLink(identity: LocalIdentity) {
+  const payload = {
+    nickname: identity.nickname,
+    publicKeyJwk: identity.publicKeyJwk,
+    fingerprint: identity.fingerprint
+  };
+
+  const encoded = btoa(JSON.stringify(payload));
+
+  return `apple2apple://friend/${encoded}`;
+}
+
+export function parseInviteLink(link: string) {
+  const prefix = "apple2apple://friend/";
+
+  if (!link.startsWith(prefix)) {
+    throw new Error("Link de invitación inválido");
+  }
+
+  const encoded = link.slice(prefix.length);
+  return JSON.parse(atob(encoded));
+}

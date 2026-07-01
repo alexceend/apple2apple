@@ -4,14 +4,23 @@ export type TestEnvelope = {
   sentAt: number;
 };
 
+export type PeerIdentity = {
+    nickname: string;
+    publicKeyJwk: JsonWebKey;
+    fingerprint: string;
+};
+
+
 export type WebRtcOfferEnvelope = {
   type: "webrtc.offer";
   sdp: RTCSessionDescriptionInit;
+  senderIdentity: PeerIdentity;
 };
 
 export type WebRtcAnswerEnvelope = {
   type: "webrtc.answer";
   sdp: RTCSessionDescriptionInit;
+  senderIdentity: PeerIdentity;
 };
 
 export type WebRtcIceEnvelope = {

@@ -1,4 +1,5 @@
-import type { SignalEnvelope } from "./p2p-types";
+import type { PeerIdentity, SignalEnvelope } from "./p2p-types";
+import { isFriend } from "./friends";
 
 type SendSignal = (to: string, envelope: SignalEnvelope) => void;
 type OnLog = (message: unknown) => void;
@@ -7,6 +8,7 @@ type OnDataMessage = (message: string | ArrayBuffer) => void;
 type WebRtcClientOptions = {
     localRouteId: string;
     remoteRouteId: string;
+    identity: PeerIdentity;
     sendSignal: SendSignal;
     onLog: OnLog;
     onDataMessage: OnDataMessage;
@@ -21,6 +23,7 @@ export class WebRtcClient {
 
     private localRouteId: string;
     private remoteRouteId: string;
+    private identity: PeerIdentity;
     private sendSignal: SendSignal;
     private onLog: OnLog;
     private onDataMessage: OnDataMessage;
@@ -30,6 +33,7 @@ export class WebRtcClient {
         this.remoteRouteId = options.remoteRouteId;
         this.sendSignal = options.sendSignal;
         this.onLog = options.onLog;
+        this.identity = options.identity;
         this.onDataMessage = options.onDataMessage;
 
         this.onLog({
@@ -91,14 +95,24 @@ export class WebRtcClient {
 
         this.sendSignal(this.remoteRouteId, {
             type: "webrtc.offer",
-            sdp: offer
+            sdp: offer,
+            senderIdentity: this.identity
         });
     }
 
-    async handleOffer(sdp: RTCSessionDescriptionInit) {
+    async handleOffer(sdp: RTCSessionDescriptionInit, senderIdentity: PeerIdentity) {
         this.onLog({
             type: "webrtc.offer.received"
         });
+
+        if (!isFriend(senderIdentity.fingerprint)) {
+             this.onLog({
+                type: "webrtc.offer.rejected.not_friend",
+                fingerprint: senderIdentity.fingerprint
+            });
+            return;
+        }
+
 
         await this.peer.setRemoteDescription(sdp);
 
@@ -111,7 +125,8 @@ export class WebRtcClient {
 
         this.sendSignal(this.remoteRouteId, {
             type: "webrtc.answer",
-            sdp: answer
+            sdp: answer,
+            senderIdentity: this.identity
         });
     }
 

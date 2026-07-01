@@ -15,7 +15,9 @@ import { useIdentity } from "./hooks/useIdentity";
 
 import logo from "./assets/logo-big.ico"
 import { FileTransferPanel } from "./components/FileTransferPanel";
-import { updateNickname } from "./p2p/identity";
+import { updateNickname, createInviteLink } from "./p2p/identity";
+
+import { FriendsPanel } from "./components/FriendsPanel";
 
 function App() {
   const { messages, addMessage } = useMessages();
@@ -82,6 +84,9 @@ function App() {
     }
   }, [identity]);
 
+
+  const inviteLink = identity ? createInviteLink(identity) : "";
+
   return (
     <main className={darkMode ? "app app-dark" : "app app-light"}>
       <button
@@ -128,6 +133,18 @@ function App() {
             const updated = await updateNickname(nickname);
             setIdentity(updated);
           }}
+          inviteLink={inviteLink}
+          onCopyInviteLink={async () => {
+            navigator.clipboard.writeText(inviteLink);
+
+            addMessage({
+              type: "identity.invite_link.copied"
+            });
+          }}
+        />
+
+        <FriendsPanel
+          addMessage={addMessage}
         />
 
         <SignalingSettingsPanel
