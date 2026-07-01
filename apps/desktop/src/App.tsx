@@ -11,6 +11,7 @@ import { useMessages } from "./hooks/useMessages";
 import { useSettings } from "./hooks/useSettings";
 import { useP2PConnection } from "./hooks/useP2PConnection";
 import { useEffect, useState } from "react";
+import { useIdentity } from "./hooks/useIdentity";
 
 import logo from "./assets/logo-big.ico"
 import { FileTransferPanel } from "./components/FileTransferPanel";
@@ -18,6 +19,7 @@ import { FileTransferPanel } from "./components/FileTransferPanel";
 function App() {
   const { messages, addMessage } = useMessages();
   const [darkMode, setDarkMode] = useState(true);
+  const { identity } = useIdentity({ addMessage });
 
   const {
     serverUrl,
@@ -45,6 +47,7 @@ function App() {
   } = useP2PConnection({
     serverUrl,
     serverToken,
+    identity,
     addMessage,
     onDataChannelMessage: (data) => {
       incomingDataHandler?.(data);

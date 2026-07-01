@@ -1,4 +1,5 @@
 import type { SignalEnvelope } from "./p2p-types";
+import type { LocalIdentity } from "./identity";
 
 type SignalingStatus =
   | "idle"
@@ -11,6 +12,7 @@ type SignalingClientOptions = {
   url: string;
   token: string;
   routeId: string;
+  identity: LocalIdentity;
   onStatus?: (status: SignalingStatus) => void;
   onMessage?: (message: unknown) => void;
 };
@@ -34,7 +36,13 @@ export class SignalingClient {
 
       this.send({
         type: "hello",
-        routeId: this.options.routeId
+        routeId: this.options.routeId,
+        identity: {
+          deviceId: this.options.identity.deviceId,
+          nickname: this.options.identity.nickname,
+          publicKeyJwk: this.options.identity.publicKeyJwk,
+          fingerprint: this.options.identity.fingerprint
+        }
       });
     };
 

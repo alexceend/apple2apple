@@ -3,10 +3,12 @@ import { SignalingClient } from "../p2p/signaling-client";
 import { WebRtcClient } from "../p2p/webrtc-client";
 import { getOrCreateRouteId } from "../p2p/route-id";
 import type { RelayMessage, SignalEnvelope } from "../p2p/p2p-types";
+import type { LocalIdentity } from "../p2p/identity";
 
 type UseP2PConnectionOptions = {
   serverUrl: string;
   serverToken: string;
+  identity: LocalIdentity | null;
   addMessage: (message: unknown) => void;
   onDataChannelMessage?: (data: string | ArrayBuffer) => void;
 };
@@ -14,6 +16,7 @@ type UseP2PConnectionOptions = {
 export function useP2PConnection({
   serverUrl,
   serverToken,
+  identity,
   addMessage,
   onDataChannelMessage
 }: UseP2PConnectionOptions) {
@@ -95,10 +98,16 @@ export function useP2PConnection({
 
     clientRef.current?.close();
 
+    if(!identity){
+      addMessage("La identidad local todavía no está cargada");
+      return;
+    }
+
     const client = new SignalingClient({
       url: serverUrl.trim(),
       token: serverToken.trim(),
       routeId,
+      identity,
       onStatus: (status) => {
         setConnectionStatus(status);
         addMessage({
