@@ -35,6 +35,11 @@ type FileTransferClientOptions = {
     blob: Blob;
   }) => void;
   onProgress?: (progress: TransferProgress) => void;
+  onFileOffer?: (offer: {
+    fileId: string;
+    fileName: string;
+    fileSize: number;
+  }) => void;
 };
 
 export class FileTransferClient {
@@ -51,6 +56,8 @@ export class FileTransferClient {
   private paused = false;
   private pauseResolver: (() => void) | null = null;
 
+  private acceptResolvers = new Map<string, (accepted: boolean) => void>();
+
 
   constructor(private readonly options: FileTransferClientOptions) {}
 
@@ -59,11 +66,11 @@ export class FileTransferClient {
     const fileId = this.getFileId(file);
 
     const blockSize = BLOCK_SIZE;
-    const pieceSize = this.choosePieceSize(file.size);
-    const blocksPerPiece = Math.ceil(pieceSize / blockSize);
+    const blocksPerPiece = this.chooseBlocksPerPiece(file.size);
+    const pieceSize = blockSize * blocksPerPiece;
 
     const totalBlocks = Math.ceil(file.size / blockSize);
-    const totalPieces = Math.ceil(file.size / pieceSize);
+    const totalPieces = Math.ceil(totalBlocks / blocksPerPiece);
 
 
     const meta: FileMetaMessage = {
@@ -78,6 +85,17 @@ export class FileTransferClient {
     };
 
     await this.sendJson(meta);
+
+    const accepted = await this.waitForAccept(fileId);
+
+    if (!accepted) {
+      this.options.onLog({
+        type: "file.send.rejected_or_timeout",
+        fileId,
+        fileName: file.name
+      });
+      return;
+    }
 
     const missingPieces = await this.waitForResumeStatus(fileId);
 
@@ -186,6 +204,16 @@ export class FileTransferClient {
       return;
     }
 
+    if (message.type === "file.accept") {
+      this.acceptResolvers.get(message.fileId)?.(true);
+      return;
+    }
+
+    if (message.type === "file.reject") {
+      this.acceptResolvers.get(message.fileId)?.(false);
+      return;
+    }
+
     if (message.type === "file.meta") {
       await this.handleFileMeta(message);
       return;
@@ -248,6 +276,7 @@ export class FileTransferClient {
       return;
     }
 
+
     const now = Date.now();
 
     this.receivingFiles.set(message.fileId, {
@@ -279,6 +308,12 @@ export class FileTransferClient {
       blockSize: message.blockSize,
       totalPieces: message.totalPieces,
       totalBlocks: message.totalBlocks
+    });
+
+    this.options.onFileOffer?.({
+      fileId: message.fileId,
+      fileName: message.fileName,
+      fileSize: message.fileSize
     });
   }
 
@@ -339,7 +374,7 @@ export class FileTransferClient {
 
     state.blocks[parsed.globalBlockIndex] = parsed.payload;
 
-    const blocksPerPiece = Math.ceil(
+    const blocksPerPiece = Math.round(
       state.meta.pieceSize / state.meta.blockSize
     );
 
@@ -456,6 +491,21 @@ export class FileTransferClient {
     });
   }
 
+  private waitForAccept(fileId: string) {
+    return new Promise<boolean>((resolve) => {
+      const timeoutId = window.setTimeout(() => {
+        this.acceptResolvers.delete(fileId);
+        resolve(false);
+      }, 60_000);
+
+      this.acceptResolvers.set(fileId, (accepted) => {
+        window.clearTimeout(timeoutId);
+        this.acceptResolvers.delete(fileId);
+        resolve(accepted);
+      });
+    });
+  }
+
   private emitProgress(progress: TransferProgress) {
     const now = Date.now();
     const isFinished = progress.bytesTransferred >= progress.totalBytes;
@@ -476,19 +526,20 @@ export class FileTransferClient {
     return `${file.name}-${file.size}-${file.lastModified}`;
   }
 
-  private choosePieceSize(fileSize: number) {
+  private chooseBlocksPerPiece(fileSize: number) {
     const mib = 1024 * 1024;
 
     if (fileSize < 350 * mib) {
-      return 1 * mib;
+      return 4; // 4 × 240 KiB = 960 KiB
     }
 
     if (fileSize < 2 * 1024 * mib) {
-      return 2 * mib;
+      return 8; // 8 × 240 KiB = 1920 KiB
     }
 
-    return 4 * mib;
+    return 16; // 16 × 240 KiB = 3840 KiB
   }
+
 
   pause() {
     this.paused = true;
@@ -512,4 +563,39 @@ export class FileTransferClient {
       this.pauseResolver = resolve;
     });
   }
+
+  async acceptFile(fileId: string) {
+    const state = this.receivingFiles.get(fileId);
+    if (!state) {
+      this.options.onLog({ type: 'file.accept.error', reason: 'No state for fileId' });
+      return;
+    }
+
+    await this.sendJson({ type: 'file.accept', fileId });
+
+    const missingPieces = this.getMissingPieces(state);
+    await this.sendJson({
+      type: 'file.resume.status',
+      fileId,
+      missingPieces,
+    });
+
+    this.options.onLog({
+      type: 'file.accept.sent',
+      fileId,
+      fileName: state.meta.fileName,
+      missingPieces,
+    });
+  }
+
+  async rejectFile(fileId: string) {
+    await this.sendJson({ type: 'file.reject', fileId });
+    this.receivingFiles.delete(fileId);
+    if (this.activeReceiveFileId === fileId) {
+      this.activeReceiveFileId = null;
+    }
+    this.options.onLog({ type: 'file.reject.sent', fileId });
+  }
+
+
 }

@@ -2,6 +2,13 @@ import { useState } from "react";
 
 import type { TransferProgress } from "../p2p/file-transfer-types";
 
+
+type IncomingFileOffer = {
+  fileId: string;
+  fileName: string;
+  fileSize: number;
+};
+
 type FileTransferPanelProps = {
   sendFile: (file: File | null) => void;
   pauseTransfer: () => void;
@@ -12,6 +19,9 @@ type FileTransferPanelProps = {
     url: string;
   }[];
   progress: TransferProgress | null;
+  incomingOffers: IncomingFileOffer[];
+  acceptFile: (fileId: string) => void;
+  rejectFile: (fileId: string) => void;
 };
 
 export function FileTransferPanel({
@@ -19,7 +29,10 @@ export function FileTransferPanel({
   pauseTransfer,
   resumeTransfer,
   receivedFiles,
-  progress
+  progress,
+  incomingOffers,
+  acceptFile,
+  rejectFile
 }: FileTransferPanelProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -67,6 +80,40 @@ export function FileTransferPanel({
               <button onClick={resumeTransfer}>Continuar</button>
             </>
           )}
+        </div>
+      )}
+
+      {incomingOffers.length > 0 && (
+        <div
+          style={{
+            marginTop: 24,
+            padding: 16,
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            background: "var(--panel-bg)"
+          }}
+        >
+          <h3>Archivos entrantes</h3>
+
+          {incomingOffers.map((offer) => (
+            <div key={offer.fileId} style={{ marginBottom: 12 }}>
+              <p>
+                <strong>{offer.fileName}</strong>{" "}
+                ({(offer.fileSize / 1024 / 1024).toFixed(1)} MB)
+              </p>
+
+              <button onClick={() => acceptFile(offer.fileId)}>
+                Aceptar
+              </button>
+
+              <button
+                onClick={() => rejectFile(offer.fileId)}
+                style={{ marginLeft: 8 }}
+              >
+                Rechazar
+              </button>
+            </div>
+          ))}
         </div>
       )}
 

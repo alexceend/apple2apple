@@ -28,6 +28,9 @@ export type FileCancelMessage = {
 };
 
 export type FileTransferControlMessage =
+  | FileOfferMessage
+  | FileAcceptMessage
+  | FileRejectMessage
   | FileMetaMessage
   | FileDoneMessage
   | FileResumeStatusMessage
@@ -42,4 +45,26 @@ export type TransferProgress = {
   speedMBps: number;
   percent: number;
   direction: "send" | "receive";
+};
+
+
+export type FileOfferMessage = {
+  type: "file.offer";
+  fileId: string;
+  fileName: string;
+  fileSize: number;
+  pieceSize: number;
+  blockSize: number;
+  totalPieces: number;
+  totalBlocks: number;
+};
+
+export type FileAcceptMessage = {
+  type: "file.accept";
+  fileId: string;
+};
+
+export type FileRejectMessage = {
+  type: "file.reject";
+  fileId: string;
 };

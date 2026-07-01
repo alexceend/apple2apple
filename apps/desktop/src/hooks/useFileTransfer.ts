@@ -8,6 +8,11 @@ type ReceivedFile = {
   url: string;
 };
 
+type IncomingFileOffer = {
+  fileId: string;
+  fileName: string;
+  fileSize: number;
+};
 
 type UseFileTransferOptions = {
   sendData: (data: string | ArrayBuffer) => Promise<void>;
@@ -20,12 +25,32 @@ export function useFileTransfer({
 }: UseFileTransferOptions) {
   const [receivedFiles, setReceivedFiles] = useState<ReceivedFile[]>([]);
   const [progress, setProgress] = useState<TransferProgress | null>(null);
+  const [incomingOffers, setIncomingOffers] = useState<IncomingFileOffer[]>([]);
 
   const fileTransfer = useMemo(() => {
     return new FileTransferClient({
       sendData,
       onLog: addMessage,
       onProgress: setProgress,
+      onFileOffer: (offer) => {
+        setIncomingOffers((prev) => {
+          const alreadyExists = prev.some(
+            (item) => item.fileId === offer.fileId
+          );
+
+          if (alreadyExists) {
+            return prev;
+          }
+
+          return [offer, ...prev];
+        });
+
+        addMessage({
+          type: "file.offer.received",
+          ...offer
+        });
+      },
+
       onReceiveComplete: ({ fileId, fileName, blob }) => {
         const url = URL.createObjectURL(blob);
 
@@ -54,11 +79,27 @@ export function useFileTransfer({
     fileTransfer.handleData(data);
   };
 
+  const acceptFile = async (fileId: string) => {
+    await fileTransfer.acceptFile(fileId);
+    setIncomingOffers((prev) =>
+    prev.filter((offer) => offer.fileId !== fileId));
+  };
+
+  const rejectFile = async (fileId: string) => {
+    await fileTransfer.rejectFile(fileId);
+    setIncomingOffers((prev) =>
+      prev.filter((offer) => offer.fileId !== fileId)
+    );
+  }
+
   return {
     sendFile,
     handleIncomingData,
     receivedFiles,
     progress,
+    incomingOffers,
+    acceptFile,
+    rejectFile,
     pauseTransfer: () => fileTransfer.pause(),
     resumeTransfer: () => fileTransfer.resume()
   };

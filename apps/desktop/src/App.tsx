@@ -56,6 +56,9 @@ function App() {
     handleIncomingData,
     receivedFiles,
     progress,
+    incomingOffers,
+    acceptFile,
+    rejectFile,
     pauseTransfer,
     resumeTransfer
   } = useFileTransfer({
@@ -135,6 +138,9 @@ function App() {
           resumeTransfer={resumeTransfer}
           receivedFiles={receivedFiles}
           progress={progress}
+          incomingOffers={incomingOffers}
+          acceptFile={acceptFile}
+          rejectFile={rejectFile}
         />
 
         <MessageLog messages={messages} />
