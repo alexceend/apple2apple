@@ -22,6 +22,8 @@ const PORT = Number(process.env.PORT || 6767);
 const TOKEN = process.env.P2P_SERVER_TOKEN || "";
 
 const peers = new Map();
+const routesByFingerprint = new Map();
+const fingerprintsByRoute = new Map();
 
 function mask(value){
   if(!value || typeof value !== "string"){
@@ -115,6 +117,12 @@ app.register(async function (fastify) {
         routeId = msg.routeId;
         peers.set(routeId, socket);
 
+        const fingerprint = msg.identity?.fingerprint;
+        if (fingerprint) {
+          routesByFingerprint.set(fingerprint, routeId);
+          fingerprintsByRoute.set(routeId, fingerprint);
+        }
+
         logSecurity("info", "peer_registered", { 
           ip: clientIp, routeId: mask(routeId), onlinePeers: peers.size 
         });
@@ -123,6 +131,29 @@ app.register(async function (fastify) {
           type: "hello.ok",
           routeId,
           onlinePeers: peers.size
+        }));
+
+        return;
+      }
+
+      if (msg.type === "resolve.peer") {
+        const fingerprint = msg.fingerprint;
+
+        if (!fingerprint) {
+          socket.send(JSON.stringify({
+            type: "resolve.peer.error",
+            error: "missing_fingerprint"
+          }));
+          return;
+        }
+
+        const resolvedRouteId = routesByFingerprint.get(fingerprint);
+
+        socket.send(JSON.stringify({
+          type: "resolve.peer.ok",
+          fingerprint,
+          online: Boolean(resolvedRouteId),
+          routeId: resolvedRouteId || null
         }));
 
         return;
@@ -178,6 +209,13 @@ app.register(async function (fastify) {
     socket.on("close", () => {
       if (routeId) {
         peers.delete(routeId);
+        
+        const fingerprint = fingerprintsByRoute.get(routeId);
+        if (fingerprint) {
+          routesByFingerprint.delete(fingerprint);
+          fingerprintsByRoute.delete(routeId);
+        }
+
         logSecurity("info", "peer_disconnected", {
           ip: clientIp,
           routeId: mask(routeId),

@@ -4,7 +4,7 @@ import { WebRtcClient } from "../p2p/webrtc-client";
 import { getOrCreateRouteId } from "../p2p/route-id";
 import type { RelayMessage, SignalEnvelope } from "../p2p/p2p-types";
 import type { LocalIdentity } from "../p2p/identity";
-import { updateFriendRouteId } from "../p2p/friends";
+import { Friend, updateFriendRouteId } from "../p2p/friends";
 
 type UseP2PConnectionOptions = {
   serverUrl: string;
@@ -130,6 +130,30 @@ export function useP2PConnection({
           return;
         }
 
+        const maybeResolve = message as {
+          type?: string;
+          fingerprint?: string;
+          online?: boolean;
+          routeId?: string | null;
+        };
+
+        if (maybeResolve.type === "resolve.peer.ok") {
+          const pending = pendingResolveRef.current;
+
+          if (!pending) {
+            return;
+          }
+
+          if (pending.fingerprint !== maybeResolve.fingerprint) {
+            return;
+          }
+
+          pendingResolveRef.current = null;
+          pending.resolve(maybeResolve.routeId ?? null);
+
+          return;
+        }
+
         const from = maybeRelay.from;
         const envelope = maybeRelay.envelope;
 
@@ -209,6 +233,59 @@ export function useP2PConnection({
     await webRtcRef.current?.sendData(data);
   }, []);
 
+  const pendingResolveRef = useRef<{
+    fingerprint: string;
+    resolve: (routeId: string | null) => void;
+    reject: (error: Error) => void;
+  } | null>(null);
+
+  const resolveFriendRouteId = useCallback(
+    (fingerprint: string) => {
+      return new Promise<string | null>((resolve, reject) => {
+        if (!clientRef.current) {
+          reject(new Error("No hay cliente WebSocket activo"));
+          return;
+        }
+
+        pendingResolveRef.current = {
+          fingerprint,
+          resolve,
+          reject
+        };
+
+        clientRef.current.resolvePeer(fingerprint);
+      });
+    },
+    []
+  );
+
+  const startWebRtcWithFriend = useCallback(
+    async (friend: Friend) => {
+      try {
+        const resolvedRouteId = await resolveFriendRouteId(friend.fingerprint);
+
+        if (!resolvedRouteId) {
+          addMessage({
+            type: "friend.offline",
+            nickname: friend.nickname,
+            fingerprint: friend.fingerprint
+          });
+          return;
+        }
+
+        const webRtc = getOrCreateWebRtcClient(resolvedRouteId);
+        await webRtc.startAsCaller();
+      } catch (error) {
+        addMessage({
+          type: "webrtc.start_friend_error",
+          nickname: friend.nickname,
+          error: String(error)
+        });
+      }
+    },
+    [resolveFriendRouteId, getOrCreateWebRtcClient, addMessage]
+  );
+
   return {
     routeId,
     connectionStatus,
@@ -218,6 +295,7 @@ export function useP2PConnection({
     disconnect,
     sendTestRelay,
     startWebRtc,
+    startWebRtcWithFriend,
     sendP2PMessage,
     sendData
   };

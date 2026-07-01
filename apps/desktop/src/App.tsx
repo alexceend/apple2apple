@@ -19,11 +19,15 @@ import { updateNickname, createInviteLink } from "./p2p/identity";
 
 import { FriendsPanel } from "./components/FriendsPanel";
 
+import { Friend } from "./p2p/friends";
+
 function App() {
   const { messages, addMessage } = useMessages();
   const [darkMode, setDarkMode] = useState(true);
   const { identity, setIdentity } = useIdentity({ addMessage });
   const [nickname, setNickname] = useState("");
+
+  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
 
   const {
     serverUrl,
@@ -145,6 +149,8 @@ function App() {
 
         <FriendsPanel
           addMessage={addMessage}
+          selectedFriend={selectedFriend}
+          onSelectFriend={setSelectedFriend}
         />
 
         <SignalingSettingsPanel

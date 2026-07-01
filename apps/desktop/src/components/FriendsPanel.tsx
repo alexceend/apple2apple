@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { addFriend, getFriends } from "../p2p/friends";
 import { parseInviteLink } from "../p2p/identity";
+import type { Friend } from "../p2p/friends";
+
 
 type FriendsPanelProps = {
   addMessage: (message: unknown) => void;
+  selectedFriend: Friend | null;
+  onSelectFriend: (friend: Friend) => void;
 };
 
-export function FriendsPanel({ addMessage }: FriendsPanelProps) {
+export function FriendsPanel({ addMessage, selectedFriend, onSelectFriend }: FriendsPanelProps) {
   const [link, setLink] = useState("");
   const [friends, setFriends] = useState(getFriends());
 
@@ -47,9 +51,14 @@ export function FriendsPanel({ addMessage }: FriendsPanelProps) {
 
       <ul>
         {friends.map((friend) => (
-          <li key={friend.fingerprint}>
-            <strong>{friend.nickname}</strong> — {friend.fingerprint}
-          </li>
+            <li key={friend.fingerprint}>
+            <button onClick={() => onSelectFriend(friend)}>
+                {selectedFriend?.fingerprint === friend.fingerprint ? "✅ " : ""}
+                {friend.nickname}
+            </button>
+            {" — "}
+            {friend.fingerprint}
+            </li>
         ))}
       </ul>
     </section>

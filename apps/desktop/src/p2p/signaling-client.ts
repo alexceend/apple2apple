@@ -84,6 +84,13 @@ export class SignalingClient {
     });
   }
 
+  resolvePeer(fingerprint: string) {
+    this.send({
+      type: "resolve.peer",
+      fingerprint
+    });
+  }
+
   close() {
     this.ws?.close();
     this.ws = null;
