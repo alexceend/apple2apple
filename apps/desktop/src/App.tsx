@@ -121,6 +121,7 @@ function App() {
           routeId={routeId}
           serverUrl={serverUrl}
           hasToken={Boolean(serverToken)}
+          identity={identity}
           nickname={nickname}
           onNicknameChange={setNickname}
           onSaveNickname={async () => {

@@ -1,3 +1,5 @@
+import { LocalIdentity } from "../p2p/identity";
+
 type StatusPanelProps = {
   settingsStatus: string;
   connectionStatus: string;
@@ -5,6 +7,7 @@ type StatusPanelProps = {
   serverUrl: string;
   hasToken: boolean;
 
+  identity: LocalIdentity | null;
   nickname: string;
   onNicknameChange: (value: string) => void;
   onSaveNickname: () => void;
@@ -16,6 +19,7 @@ export function StatusPanel({
   routeId,
   serverUrl,
   hasToken,
+  identity,
   nickname,
   onNicknameChange,
   onSaveNickname
@@ -36,6 +40,18 @@ export function StatusPanel({
         <button onClick={onSaveNickname}>
           Guardar
         </button>
+
+        <p>
+          <strong>Nickname:</strong> {nickname}
+        </p>
+
+        <p>
+          <strong>Device ID:</strong> {identity?.deviceId}
+        </p>
+
+        <p>
+          <strong>Fingerprint:</strong> {identity?.fingerprint}
+        </p>
       </div>
 
 
