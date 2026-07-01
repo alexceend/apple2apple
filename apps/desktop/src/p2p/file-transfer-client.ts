@@ -18,8 +18,8 @@ type OnLog = (message: unknown) => void;
 type ReceivedFileState = {
   meta: FileMetaMessage;
   blocks: ArrayBuffer[];
-  nextGlobalBlockIndex: number;
   receivedBlocks: number;
+  completedPieces: boolean[];
   startedAt: number;
   lastUpdatedAt: number;
 };
@@ -43,7 +43,7 @@ export class FileTransferClient {
 
   private resumeResolvers = new Map<
     string,
-    (nextGlobalBlockIndex: number) => void
+    (missingPieces: number[]) => void
   >();
 
   private lastProgressAt = 0;
@@ -76,11 +76,7 @@ export class FileTransferClient {
 
     await this.sendJson(meta);
 
-    const requestedResumeIndex = await this.waitForResumeStatus(fileId);
-    const resumeFromIndex = Math.min(
-      Math.max(requestedResumeIndex, 0),
-      totalBlocks
-    )
+    const missingPieces = await this.waitForResumeStatus(fileId);
 
     this.options.onLog({
       type: "file.send.start",
@@ -91,19 +87,25 @@ export class FileTransferClient {
       blockSize,
       totalPieces,
       totalBlocks,
-      resumeFromIndex
+      missingPieces
     });
 
     const startedAt = Date.now();
 
-    for (let globalBlockIndex = resumeFromIndex;
-      globalBlockIndex < totalBlocks; globalBlockIndex++) {
+    for (const pieceIndex of missingPieces) {
+  const firstBlock = pieceIndex * blocksPerPiece;
+  const lastBlock = Math.min(firstBlock + blocksPerPiece, totalBlocks);
+
+  for (
+    let globalBlockIndex = firstBlock;
+    globalBlockIndex < lastBlock;
+    globalBlockIndex++
+  ) {
       const start = globalBlockIndex * blockSize;
       const end = Math.min(start + blockSize, file.size);
 
       const payload = await file.slice(start, end).arrayBuffer();
 
-      const pieceIndex = Math.floor(globalBlockIndex / blocksPerPiece);
       const blockIndex = globalBlockIndex % blocksPerPiece;
 
       const packet = createFileBlockPacket({
@@ -125,19 +127,17 @@ export class FileTransferClient {
         0.001
       );
 
-      const speedMBps =
-        bytesTransferred / 1024 / 1024 / elapsedSeconds;
-
       this.emitProgress({
         fileId,
         fileName: file.name,
         bytesTransferred,
         totalBytes: file.size,
-        speedMBps,
+        speedMBps: bytesTransferred / 1024 / 1024 / elapsedSeconds,
         percent: (bytesTransferred / file.size) * 100,
         direction: "send"
       });
     }
+  }
 
     await this.sendJson({
       type: "file.done",
@@ -189,13 +189,13 @@ export class FileTransferClient {
       const resolver = this.resumeResolvers.get(message.fileId);
 
       if (resolver) {
-        resolver(message.nextGlobalBlockIndex);
+        resolver(message.missingPieces);
       }
 
       this.options.onLog({
         type: "file.resume.status.received",
         fileId: message.fileId,
-        nextGlobalBlockIndex: message.nextGlobalBlockIndex
+        missingPieces: message.missingPieces
       });
 
       return;
@@ -229,14 +229,14 @@ export class FileTransferClient {
       await this.sendJson({
         type: "file.resume.status",
         fileId: message.fileId,
-        nextGlobalBlockIndex: existing.nextGlobalBlockIndex
+        missingPieces: this.getMissingPieces(existing)
       });
 
       this.options.onLog({
         type: "file.resume.status.sent",
         fileId: message.fileId,
         fileName: message.fileName,
-        nextGlobalBlockIndex: existing.nextGlobalBlockIndex
+        missingPieces: this.getMissingPieces(existing)
       });
 
       return;
@@ -247,8 +247,8 @@ export class FileTransferClient {
     this.receivingFiles.set(message.fileId, {
       meta: message,
       blocks: [],
-      nextGlobalBlockIndex: 0,
       receivedBlocks: 0,
+      completedPieces: new Array(message.totalPieces).fill(false),
       startedAt: now,
       lastUpdatedAt: now
     });
@@ -258,7 +258,10 @@ export class FileTransferClient {
     await this.sendJson({
       type: "file.resume.status",
       fileId: message.fileId,
-      nextGlobalBlockIndex: 0
+      missingPieces: Array.from(
+        { length: message.totalPieces },
+        (_, index) => index
+      )
     });
 
     this.options.onLog({
@@ -271,6 +274,18 @@ export class FileTransferClient {
       totalPieces: message.totalPieces,
       totalBlocks: message.totalBlocks
     });
+  }
+
+  private getMissingPieces(state: ReceivedFileState) {
+    const missingPieces: number[] = [];
+
+    for (let i = 0; i < state.meta.totalPieces; i++) {
+      if (!state.completedPieces[i]) {
+        missingPieces.push(i);
+      }
+    }
+
+    return missingPieces;
   }
 
   private handleBinaryBlock(packet: ArrayBuffer) {
@@ -317,15 +332,35 @@ export class FileTransferClient {
     }
 
     state.blocks[parsed.globalBlockIndex] = parsed.payload;
-    state.lastUpdatedAt = Date.now();
 
-    while (state.blocks[state.nextGlobalBlockIndex]) {
-      state.nextGlobalBlockIndex++;
+    const blocksPerPiece = Math.ceil(
+      state.meta.pieceSize / state.meta.blockSize
+    );
+
+    const firstBlock = parsed.pieceIndex * blocksPerPiece;
+    const lastBlock = Math.min(
+      firstBlock + blocksPerPiece,
+      state.meta.totalBlocks
+    );
+
+    let pieceComplete = true;
+
+    for (let i = firstBlock; i < lastBlock; i++) {
+      if (!state.blocks[i]) {
+        pieceComplete = false;
+        break;
+      }
     }
+
+    if (pieceComplete) {
+      state.completedPieces[parsed.pieceIndex] = true;
+    }
+
+    state.lastUpdatedAt = Date.now();
 
 
     const bytesTransferred = Math.min(
-      state.nextGlobalBlockIndex * state.meta.blockSize,
+      state.receivedBlocks * state.meta.blockSize,
       state.meta.fileSize
     );
 
@@ -359,13 +394,14 @@ export class FileTransferClient {
       return;
     }
 
-    if (state.nextGlobalBlockIndex < state.meta.totalBlocks) {
+    const missingPieces = this.getMissingPieces(state);
+
+    if (missingPieces.length > 0) {
       this.options.onLog({
         type: "file.receive.incomplete",
         fileId,
         fileName: state.meta.fileName,
-        receivedUntil: state.nextGlobalBlockIndex,
-        totalBlocks: state.meta.totalBlocks
+        missingPieces
       });
       return;
     }
@@ -394,23 +430,22 @@ export class FileTransferClient {
   }
 
   private waitForResumeStatus(fileId: string) {
-    return new Promise<number>((resolve) => {
+    return new Promise<number[]>((resolve) => {
       const timeoutId = window.setTimeout(() => {
         this.resumeResolvers.delete(fileId);
 
         this.options.onLog({
           type: "file.resume.status.timeout",
           fileId,
-          fallbackNextGlobalBlockIndex: 0
         });
 
-        resolve(0);
+        resolve([]);
       }, 3000);
 
-      this.resumeResolvers.set(fileId, (nextGlobalBlockIndex) => {
+      this.resumeResolvers.set(fileId, (missingPieces) => {
         window.clearTimeout(timeoutId);
         this.resumeResolvers.delete(fileId);
-        resolve(nextGlobalBlockIndex);
+        resolve(missingPieces);
       });
     });
   }

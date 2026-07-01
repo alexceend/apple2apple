@@ -19,7 +19,7 @@ export type FileDoneMessage = {
 export type FileResumeStatusMessage = {
   type: "file.resume.status";
   fileId: string;
-  nextGlobalBlockIndex: number;
+  missingPieces: number[];
 };
 
 export type FileCancelMessage = {
