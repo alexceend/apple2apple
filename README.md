@@ -16,13 +16,15 @@ App Electron A ─────────────── P2P / WebRTC ──
 - Registro de peers con routeId
 - Relay entre peers
 - App Electron básica
-
-## Roadmap
 - WebRTC DataChannel
 - Transferencia por chunks
+- Pausa - Resumen transferencias básica (En RAM)
+
+## Roadmap
 - Cifrado E2E
 - Firmas digitales
 - Reanudación de transferencias
+- Pausa - Resumen transferencias persistente
 
 ## Visión del sistema
 
