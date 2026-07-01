@@ -54,3 +54,24 @@ export async function getOrCreateIdentity(): Promise<LocalIdentity> {
 
   return identity;
 }
+
+export async function updateNickname(
+  newNickname: string
+): Promise<LocalIdentity> {
+  const stored = localStorage.getItem(IDENTITY_KEY);
+
+  if (!stored) {
+    throw new Error("No existe identidad");
+  }
+
+  const identity: LocalIdentity = JSON.parse(stored);
+
+  identity.nickname = newNickname;
+
+  localStorage.setItem(
+    IDENTITY_KEY,
+    JSON.stringify(identity)
+  );
+
+  return identity;
+}

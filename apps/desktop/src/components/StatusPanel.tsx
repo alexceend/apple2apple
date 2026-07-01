@@ -4,6 +4,10 @@ type StatusPanelProps = {
   routeId: string;
   serverUrl: string;
   hasToken: boolean;
+
+  nickname: string;
+  onNicknameChange: (value: string) => void;
+  onSaveNickname: () => void;
 };
 
 export function StatusPanel({
@@ -11,11 +15,29 @@ export function StatusPanel({
   connectionStatus,
   routeId,
   serverUrl,
-  hasToken
+  hasToken,
+  nickname,
+  onNicknameChange,
+  onSaveNickname
 }: StatusPanelProps) {
   return (
     <section style={{ marginBottom: 24 }}>
       <h2>Estado</h2>
+
+      <div>
+        <label>
+          Nickname:{" "}
+          <input
+            value={nickname}
+            onChange={(e) => onNicknameChange(e.target.value)}
+          />
+        </label>
+
+        <button onClick={onSaveNickname}>
+          Guardar
+        </button>
+      </div>
+
 
       <div
         style={{

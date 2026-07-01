@@ -15,11 +15,13 @@ import { useIdentity } from "./hooks/useIdentity";
 
 import logo from "./assets/logo-big.ico"
 import { FileTransferPanel } from "./components/FileTransferPanel";
+import { updateNickname } from "./p2p/identity";
 
 function App() {
   const { messages, addMessage } = useMessages();
   const [darkMode, setDarkMode] = useState(true);
-  const { identity } = useIdentity({ addMessage });
+  const { identity, setIdentity } = useIdentity({ addMessage });
+  const [nickname, setNickname] = useState("");
 
   const {
     serverUrl,
@@ -73,6 +75,13 @@ function App() {
     setIncomingDataHandler(() => handleIncomingData);
   }, [handleIncomingData]);
 
+
+  useEffect(() => {
+    if (identity) {
+      setNickname(identity.nickname);
+    }
+  }, [identity]);
+
   return (
     <main className={darkMode ? "app app-dark" : "app app-light"}>
       <button
@@ -112,6 +121,12 @@ function App() {
           routeId={routeId}
           serverUrl={serverUrl}
           hasToken={Boolean(serverToken)}
+          nickname={nickname}
+          onNicknameChange={setNickname}
+          onSaveNickname={async () => {
+            const updated = await updateNickname(nickname);
+            setIdentity(updated);
+          }}
         />
 
         <SignalingSettingsPanel

@@ -31,5 +31,5 @@ export function useIdentity({ addMessage }: UseIdentityOptions){
         loadIdentity();
     }, [addMessage]);
 
-    return { identity };
+    return { identity, setIdentity };
 }
