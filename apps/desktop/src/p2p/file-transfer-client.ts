@@ -1,7 +1,7 @@
 import type {
   FileTransferControlMessage,
   FileMetaMessage,
-  TransferProgress
+  TransferProgress,
 } from "./file-transfer-types";
 
 import {
@@ -10,7 +10,7 @@ import {
 } from "./file-packet";
 
 
-const BLOCK_SIZE = 256 * 1024;
+const BLOCK_SIZE = 240 * 1024;
 
 type SendData = (data: string | ArrayBuffer) => Promise<void>;
 type OnLog = (message: unknown) => void;
@@ -23,6 +23,7 @@ type ReceivedFileState = {
   startedAt: number;
   lastUpdatedAt: number;
 };
+
 
 
 type FileTransferClientOptions = {

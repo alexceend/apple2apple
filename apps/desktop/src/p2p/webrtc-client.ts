@@ -142,12 +142,15 @@ export class WebRtcClient {
             return;
         }
 
-        if(this.channel.readyState != "open"){
+        if(this.channel.readyState !== "open"){
+            const state = this.channel.readyState;
+
             this.onLog({
                 type: "webrtc.datachannel.not_open",
-                state: this.channel.readyState
+                state
             });
-            return;
+
+            throw new Error(`DataChannel no abierto: ${state}`);
         }
 
         if(this.channel.bufferedAmount > MAX_BUFFERED_AMOUNT){
@@ -157,7 +160,7 @@ export class WebRtcClient {
         if (typeof data === "string") {
             this.channel.send(data);
         } else {
-            this.channel.send(data);
+            this.channel.send(new Uint8Array(data));
         }
 
         if (this.channel.bufferedAmount > MAX_BUFFERED_AMOUNT) {
@@ -230,11 +233,13 @@ export class WebRtcClient {
         channel.onmessage = (event) => {
             const data = event.data as string | ArrayBuffer;
 
-            this.onLog({
-                type: "webrtc.datachannel.message",
-                kind: typeof data === "string" ? "text" : "binary",
-                size: typeof data === "string" ? data.length : data.byteLength
-            });
+            if(typeof data === "string"){
+                this.onLog({
+                    type: "webrtc.datachannel.message",
+                    kind: "text",
+                    size: data.length
+                });
+            }
 
             this.onDataMessage(data);
         };
